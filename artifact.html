@@ -1,0 +1,369 @@
+<title>Casa 6×32</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<style>
+  /* Layout: palco 3D em tela cheia; os controles flutuam nas bordas como pranchas de um caderno de obra. */
+  :root {
+    --bg: #e9e6e0;
+    --surface: rgba(250, 248, 244, 0.92);
+    --surface-solid: #faf8f4;
+    --ink: #22211f;
+    --muted: #6b665e;
+    --line: #d9d3c8;
+    --chip: #efebe4;
+    --accent: #8a5530;
+    --accent-ink: #fffaf4;
+    --shadow: 0 10px 30px rgba(40, 30, 20, 0.14);
+    --paper: #f6f3ec;
+    --p-wall: #23211e;
+    --p-line: #807a70;
+    --p-room: #fdfcf8;
+    --p-wet: #eaf0f1;
+    --p-out: #e3ebd9;
+    --p-water: #bfe0ea;
+    --p-roof: #ebe7df;
+    --font-display: 'Archivo', 'Inter', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141412; --surface: rgba(28, 27, 25, 0.92); --surface-solid: #1c1b19; --ink: #eeeae3; --muted: #a8a197;
+      --line: #3a3732; --chip: #272522; --accent: #d99d67; --accent-ink: #1d130b; --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      --paper: #191816; --p-wall: #ece7de; --p-line: #918a80; --p-room: #22201d; --p-wet: #1e2527; --p-out: #1f271b;
+      --p-water: #1f4b59; --p-roof: #262420; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141412; --surface: rgba(28, 27, 25, 0.92); --surface-solid: #1c1b19; --ink: #eeeae3; --muted: #a8a197;
+    --line: #3a3732; --chip: #272522; --accent: #d99d67; --accent-ink: #1d130b; --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --paper: #191816; --p-wall: #ece7de; --p-line: #918a80; --p-room: #22201d; --p-wet: #1e2527; --p-out: #1f271b;
+    --p-water: #1f4b59; --p-roof: #262420; color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--ink); font: 14px/1.45 var(--font-body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+    overflow: hidden;
+  }
+  button, select, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  #app { position: fixed; inset: 0; }
+  #stage { position: absolute; inset: 0; background: var(--bg); touch-action: none; }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  .labels { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .float, #planView, #joy { z-index: 2; }
+  .modes { z-index: 3; }
+  #loading { z-index: 5; }
+  .crosshair { z-index: 1; }
+  .room-label {
+    display: grid; justify-items: center; gap: 1px; padding: 3px 8px; border-radius: 6px;
+    background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+    font: 600 12px/1.2 var(--font-body); white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  }
+  .room-label span { font: 500 11px var(--font-mono); color: var(--muted); }
+
+  .float { position: absolute; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .brand {
+    top: calc(14px + env(safe-area-inset-top, 0px)); left: calc(14px + env(safe-area-inset-left, 0px));
+    padding: 12px 16px 13px; border-radius: 12px; max-width: min(320px, calc(100vw - 28px));
+  }
+  .eyebrow { margin: 0; font: 600 10.5px/1.3 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .brand h1 { margin: 2px 0 2px; font: 700 26px/1.05 var(--font-display); letter-spacing: -0.01em; }
+  .brand h1 em { font-style: normal; color: var(--accent); }
+  .brand p.sub { margin: 0; color: var(--muted); font-size: 12.5px; }
+
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--chip); border: 1px solid var(--line); }
+  .seg button {
+    white-space: nowrap; border: 0; background: transparent; padding: 7px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; color: var(--muted);
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .seg button:hover { color: var(--ink); }
+  .seg button[aria-pressed="true"] { background: var(--surface-solid); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }
+  .modes { top: calc(14px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); padding: 4px; border-radius: 13px; }
+  .modes .seg { border: 0; background: transparent; }
+  .modes .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  #panelToggle {
+    top: calc(14px + env(safe-area-inset-top, 0px)); right: calc(14px + env(safe-area-inset-right, 0px));
+    border-radius: 10px; padding: 8px 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  }
+  #panel {
+    top: calc(64px + env(safe-area-inset-top, 0px)); right: calc(14px + env(safe-area-inset-right, 0px));
+    width: 312px; max-height: calc(100% - 84px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow: auto; border-radius: 14px; padding: 14px; display: grid; gap: 16px; overscroll-behavior: contain;
+  }
+  #panel[data-open="false"] { display: none; }
+  #panel section { display: grid; gap: 8px; }
+  #panel h2 { margin: 0; font: 600 10.5px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .seg.full { display: flex; }
+  .seg.full button { flex: 1; padding: 7px 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line); background: var(--surface-solid); border-radius: 999px; padding: 5px 11px; cursor: pointer; font-size: 12.5px; font-weight: 500; }
+  .chip:hover { border-color: var(--accent); }
+  .checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .checks label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+  .checks input { accent-color: var(--accent); width: 15px; height: 15px; }
+  #rooms { display: grid; gap: 6px; }
+  #rooms .eyebrow { margin-top: 4px; }
+  .room-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .room-btn {
+    display: grid; text-align: left; gap: 0; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--surface-solid); cursor: pointer; min-width: 0;
+  }
+  .room-btn span { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .room-btn small { font: 500 11px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .room-btn:hover { border-color: var(--accent); }
+  .primary {
+    border: 0; border-radius: 10px; padding: 10px 12px; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer;
+  }
+  details { border-top: 1px solid var(--line); padding-top: 10px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+  th { text-align: left; font-weight: 500; color: var(--muted); padding: 4px 0; }
+  td { text-align: right; font: 500 12px var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr + tr th, tr + tr td { border-top: 1px dashed var(--line); }
+  .specs { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 12.5px; color: var(--muted); }
+  .specs b { color: var(--ink); font-weight: 600; }
+
+  #walkHud {
+    left: 50%; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%);
+    border-radius: 12px; padding: 8px 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
+    max-width: calc(100vw - 28px);
+  }
+  #walkHud[hidden] { display: none; }
+  #walkHud select { border: 1px solid var(--line); background: var(--surface-solid); border-radius: 8px; padding: 6px 8px; font-size: 13px; max-width: 210px; }
+  #where { font: 600 13px var(--font-body); min-width: 110px; }
+  #where::before { content: 'Você está em: '; font-weight: 400; color: var(--muted); }
+  #walkHint { font-size: 12px; color: var(--muted); }
+  #walkHint .t, body[data-touch="true"] #walkHint .d { display: none; }
+  body[data-touch="true"] #walkHint .t { display: inline; }
+  #walkHint[data-locked="true"] .d1 { display: none; }
+  #walkHint:not([data-locked="true"]) .d2 { display: none; }
+  kbd { font: 500 11px var(--font-mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--surface-solid); }
+  .ghost { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-weight: 600; font-size: 12.5px; }
+  .crosshair { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); pointer-events: none; display: none; }
+  body[data-mode="walk"] .crosshair { display: block; }
+  #joy {
+    position: absolute; left: calc(26px + env(safe-area-inset-left, 0px)); bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    width: 112px; height: 112px; border-radius: 50%; background: rgba(20, 20, 20, 0.28); border: 2px solid rgba(255, 255, 255, 0.55);
+    display: none; touch-action: none;
+  }
+  #joyKnob { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(255, 255, 255, 0.85); }
+  body[data-mode="walk"][data-touch="true"] #joy { display: block; }
+  body[data-mode="walk"] .brand, body[data-mode="walk"] #panelToggle, body[data-mode="walk"] #panel { display: none; }
+
+  #planView { position: absolute; inset: 0; background: var(--paper); display: grid; grid-template-rows: auto 1fr auto; }
+  #planView[hidden] { display: none; }
+  body[data-mode="plan"] .brand, body[data-mode="plan"] #panelToggle, body[data-mode="plan"] #panel { display: none; }
+  .plan-head {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; justify-content: space-between;
+    padding: calc(70px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px));
+  }
+  .plan-head h2 { margin: 0; font: 700 20px var(--font-display); }
+  .plan-head p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  #planCanvas { min-height: 0; padding: 4px max(16px, env(safe-area-inset-right, 0px)) 4px max(16px, env(safe-area-inset-left, 0px)); }
+  #planSvg { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  #planSvg:active { cursor: grabbing; }
+  .plan-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+  .plan-tools .seg button { min-width: 36px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 8px max(16px, env(safe-area-inset-left, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)); font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; border: 1px solid var(--line); }
+  .sw-room { background: var(--p-room); } .sw-wet { background: var(--p-wet); } .sw-out { background: var(--p-out); } .sw-water { background: var(--p-water); }
+  .p-walk { fill: var(--p-roof); }
+  .p-lot { fill: none; stroke: var(--p-line); stroke-width: 0.03; stroke-dasharray: 0.2 0.12; }
+  .p-room { fill: var(--p-room); } .p-wet { fill: var(--p-wet); } .p-out { fill: var(--p-out); } .p-roof { fill: var(--p-roof); }
+  .p-water { fill: var(--p-water); } .p-faint { opacity: 0.45; }
+  .p-wall { fill: var(--p-wall); }
+  .p-window { fill: var(--paper); stroke: var(--p-wall); stroke-width: 0.02; }
+  .p-thin { fill: none; stroke: var(--p-line); stroke-width: 0.016; }
+  .p-door { fill: none; stroke: var(--p-wall); stroke-width: 0.03; }
+  .p-swing { fill: none; stroke: var(--p-line); stroke-width: 0.014; stroke-dasharray: 0.06 0.05; }
+  .p-fur { fill: none; stroke: var(--p-line); stroke-width: 0.018; }
+  .p-fix, .p-stair { fill: var(--p-room); stroke: var(--p-wall); stroke-width: 0.02; }
+  .p-arrow { fill: none; stroke: var(--accent); stroke-width: 0.035; stroke-linecap: round; stroke-linejoin: round; }
+  .p-void { fill: none; stroke: var(--p-line); stroke-width: 0.016; }
+  .p-pool { fill: var(--p-water); stroke: var(--p-wall); stroke-width: 0.03; }
+  .p-beach { fill: none; stroke: var(--p-line); stroke-width: 0.016; stroke-dasharray: 0.08 0.06; }
+  .p-gate { fill: var(--p-water); stroke: var(--p-wall); stroke-width: 0.015; }
+  .p-label { font: 600 0.24px var(--font-body); fill: var(--ink); }
+  .p-area { font: 500 0.2px var(--font-mono); fill: var(--muted); }
+  .p-small { font: 600 0.17px var(--font-body); letter-spacing: 0.02px; fill: var(--muted); }
+  .p-tiny { font: 500 0.15px var(--font-mono); fill: var(--muted); }
+  .p-dim { stroke: var(--accent); stroke-width: 0.015; }
+  .p-dimdot { fill: var(--accent); }
+  .p-dimtext { font: 500 0.22px var(--font-mono); fill: var(--accent); }
+  .p-scale1 { fill: var(--p-wall); } .p-scale2 { fill: none; stroke: var(--p-wall); stroke-width: 0.02; }
+
+  dialog {
+    width: min(760px, calc(100vw - 32px)); max-height: calc(100% - 48px); border: 1px solid var(--line); border-radius: 14px; padding: 0;
+    background: var(--surface-solid); color: var(--ink); box-shadow: var(--shadow);
+  }
+  dialog::backdrop { background: rgba(10, 10, 10, 0.45); }
+  .dlg-head { position: sticky; top: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; justify-content: space-between; padding: 14px 18px; background: var(--surface-solid); border-bottom: 1px solid var(--line); }
+  .dlg-head h2 { margin: 0; font: 700 18px var(--font-display); }
+  .dlg-actions { display: flex; align-items: center; gap: 8px; }
+  #copyStatus { font-size: 12px; color: var(--muted); }
+  #promptText { margin: 0; padding: 16px 18px 22px; white-space: pre-wrap; font: 13px/1.6 var(--font-body); max-width: 72ch; }
+
+  #loading { position: absolute; inset: 0; display: grid; place-items: center; background: var(--bg); font: 600 15px var(--font-body); color: var(--muted); transition: opacity 0.5s; }
+  body.ready #loading { opacity: 0; pointer-events: none; }
+
+  @media (max-width: 760px) {
+    .brand { padding: 9px 12px; max-width: calc(100vw - 132px); }
+    .brand h1 { font-size: 20px; }
+    .brand p.sub { display: none; }
+    .modes { top: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+    body[data-mode="walk"] .modes, body[data-mode="plan"] .modes { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; }
+    #panel {
+      top: auto; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); right: calc(10px + env(safe-area-inset-right, 0px));
+      width: auto; max-height: 58%;
+    }
+    .modes .seg button { white-space: nowrap; padding: 7px 10px; font-size: 12.5px; }
+    #walkHud { gap: 6px 8px; top: calc(66px + env(safe-area-inset-top, 0px)); bottom: auto; }
+    #walkHint { display: none; }
+    #joy { bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+
+<div id="app">
+  <div id="stage" aria-label="Modelo 3D da casa"></div>
+  <div class="crosshair" aria-hidden="true"></div>
+
+  <header class="brand float">
+    <p class="eyebrow">Lote 6,00 × 32,00 m · Sobrado</p>
+    <h1>Casa <em>6×32</em></h1>
+    <p class="sub">3 quartos (1 suíte com closet) · 2 banhos · gourmet com piscina</p>
+  </header>
+
+  <nav class="modes float" aria-label="Modo de visualização">
+    <div class="seg" role="group">
+      <button type="button" data-mode="orbit" aria-pressed="true">Explorar 3D</button>
+      <button type="button" data-mode="walk" aria-pressed="false">Caminhar</button>
+      <button type="button" data-mode="plan" aria-pressed="false">Planta 2D</button>
+    </div>
+  </nav>
+
+  <button id="panelToggle" class="float" type="button" aria-controls="panel" aria-expanded="true">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    Opções
+  </button>
+
+  <aside id="panel" class="float" data-open="true" aria-label="Opções do modelo">
+    <section>
+      <h2>Vista</h2>
+      <div class="seg full" role="group" aria-label="Recorte do modelo">
+        <button type="button" data-view="full" aria-pressed="true">Casa inteira</button>
+        <button type="button" data-view="noroof" aria-pressed="false">Sem laje</button>
+        <button type="button" data-view="ground" aria-pressed="false">Só térreo</button>
+      </div>
+    </section>
+    <section>
+      <h2>Câmera</h2>
+      <div class="chips">
+        <button type="button" class="chip" data-cam="fachada">Fachada</button>
+        <button type="button" class="chip" data-cam="aerea">Aérea</button>
+        <button type="button" class="chip" data-cam="fundos">Fundos e piscina</button>
+        <button type="button" class="chip" data-cam="lateral">Lateral</button>
+        <button type="button" class="chip" data-cam="topo">De cima</button>
+      </div>
+    </section>
+    <section>
+      <h2>Iluminação</h2>
+      <div class="seg full" role="group" aria-label="Iluminação">
+        <button type="button" data-light="day" aria-pressed="true">Dia</button>
+        <button type="button" data-light="night" aria-pressed="false">Noite</button>
+      </div>
+    </section>
+    <section>
+      <h2>Mostrar</h2>
+      <div class="checks">
+        <label><input id="opt-labels" type="checkbox"> Nomes</label>
+        <label><input id="opt-furniture" type="checkbox"> Móveis</label>
+        <label><input id="opt-neighbors" type="checkbox"> Vizinhos</label>
+      </div>
+    </section>
+    <section>
+      <h2>Ambientes</h2>
+      <div id="rooms"></div>
+    </section>
+    <section>
+      <h2>Projeto</h2>
+      <button id="openPrompt" class="primary" type="button">Ver prompt completo do projeto</button>
+      <details>
+        <summary>Quadro de áreas e dados técnicos</summary>
+        <table><tbody id="areas"></tbody></table>
+        <ul class="specs">
+          <li><b>Pé-direito</b> 2,80 m · hall duplo 5,80 m</li>
+          <li><b>Escada</b> 17 espelhos de 17,6 cm, pisada 28 cm</li>
+          <li><b>Recuo frontal</b> 5,00 m · vagas: 1 coberta + 1 descoberta</li>
+          <li><b>Piscina</b> 3,00 × 4,50 m, prof. 1,40 m, prainha 0,35 m</li>
+        </ul>
+      </details>
+    </section>
+  </aside>
+
+  <div id="walkHud" class="float" hidden>
+    <select id="spot" aria-label="Ir para"></select>
+    <span id="where">Calçada</span>
+    <span id="walkHint">
+      <span class="d d1">Clique na cena para olhar com o mouse · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> anda · <kbd>Shift</kbd> corre</span>
+      <span class="d d2"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> anda · <kbd>Shift</kbd> corre · <kbd>Esc</kbd> solta o mouse</span>
+      <span class="t">Arraste para olhar · use o círculo para andar</span>
+    </span>
+    <button id="exitWalk" class="ghost" type="button">Sair</button>
+  </div>
+  <div id="joy" aria-hidden="true"><div id="joyKnob"></div></div>
+
+  <section id="planView" hidden aria-label="Planta baixa">
+    <div class="plan-head">
+      <div>
+        <h2>Planta baixa</h2>
+        <p>Cotas em metros · arraste para mover, use a roda do mouse ou os botões para aproximar</p>
+      </div>
+      <div class="plan-tools">
+        <div class="seg" role="group" aria-label="Pavimento">
+          <button type="button" data-level="0" aria-pressed="true">Térreo e lazer</button>
+          <button type="button" data-level="1" aria-pressed="false">Superior</button>
+        </div>
+        <div class="seg" role="group" aria-label="Zoom da planta">
+          <button id="zoomOut" type="button" aria-label="Afastar">−</button>
+          <button id="zoomIn" type="button" aria-label="Aproximar">+</button>
+          <button id="zoomReset" type="button">Ajustar</button>
+        </div>
+      </div>
+    </div>
+    <div id="planCanvas"><svg id="planSvg" role="img" aria-label="Desenho da planta baixa"></svg></div>
+    <div class="legend">
+      <span><i class="sw-room"></i>Ambiente seco</span>
+      <span><i class="sw-wet"></i>Área molhada</span>
+      <span><i class="sw-out"></i>Área externa</span>
+      <span><i class="sw-water"></i>Piscina / vidro</span>
+    </div>
+  </section>
+
+  <dialog id="promptDlg" aria-labelledby="promptTitle">
+    <div class="dlg-head">
+      <h2 id="promptTitle">Prompt do projeto</h2>
+      <div class="dlg-actions">
+        <span id="copyStatus" role="status"></span>
+        <button id="copyPrompt" class="primary" type="button">Copiar</button>
+        <button id="closePrompt" class="ghost" type="button">Fechar</button>
+      </div>
+    </div>
+    <pre id="promptText"></pre>
+  </dialog>
+
+  <div id="loading">Montando a casa…</div>
+</div>
+<script type="module" src="js/main.js"></script>
