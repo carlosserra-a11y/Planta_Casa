@@ -1,0 +1,17 @@
+{
+  "name": "Casa 6×32",
+  "short_name": "Casa 6x32",
+  "description": "Modelo 3D navegável do sobrado 6 × 32 m",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#1c1b19",
+  "theme_color": "#1c1b19",
+  "icons": [
+    {
+      "src": "icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 // Estrutura do sobrado: paredes, lajes, escada, fachada, lote, piscina e vizinhos.
-import * as THREE from 'three';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/+esm';
 import { Y, STAIR } from './plan-data.js';
 
 const DOOR_H = 2.1;

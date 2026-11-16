@@ -39,9 +39,7 @@ export class Walk {
       this.locked = document.pointerLockElement === this.dom;
       this.ui.onLockChange?.(this.locked);
     });
-    document.addEventListener('pointerlockerror', () => {
-      this.lockFailed = true;
-    });
+    document.addEventListener('pointerlockerror', () => this.failLock());
     document.addEventListener('mousemove', (e) => {
       if (this.active && this.locked) this.look(e.movementX, e.movementY, 0.0022);
     });
@@ -51,9 +49,9 @@ export class Walk {
       if (e.pointerType === 'mouse' && !this.lockFailed && !this.locked && this.dom.requestPointerLock) {
         try {
           const r = this.dom.requestPointerLock();
-          if (r && r.catch) r.catch(() => { this.lockFailed = true; });
+          if (r && r.catch) r.catch(() => this.failLock());
         } catch {
-          this.lockFailed = true;
+          this.failLock();
         }
       }
       if (!this.locked) this.drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
@@ -109,6 +107,12 @@ export class Walk {
   look(dx, dy, k) {
     this.p.yaw -= dx * k;
     this.p.pitch = Math.max(-1.35, Math.min(1.35, this.p.pitch - dy * k));
+    this.ui.onLook?.();
+  }
+
+  failLock() {
+    this.lockFailed = true;
+    this.ui.onLockFail?.();
   }
 
   enable(spot) {
@@ -117,6 +121,8 @@ export class Walk {
   }
 
   disable() {
+    const p = this.p;
+    this.last = { x: p.x, z: p.z, y: p.y, yaw: p.yaw };
     this.active = false;
     this.keys.clear();
     this.drag = null;
@@ -126,6 +132,7 @@ export class Walk {
   teleport(s) {
     Object.assign(this.p, { x: s.x, z: s.z, y: s.y, yaw: s.yaw, pitch: -0.05, vy: 0, eye: EYE });
     this.apply();
+    this.ui.onLook?.();
   }
 
   /** Altura do piso sob (x, z) que dá para alcançar a partir da altura dos pés. */
@@ -156,9 +163,12 @@ export class Walk {
     return false;
   }
 
+  /** Avança um quadro. Devolve true se a câmera mudou (para redesenhar só quando precisa). */
   update(dt) {
-    if (!this.active) return;
+    if (!this.active) return false;
     const p = this.p;
+    const cam = this.camera;
+    const before = [cam.position.x, cam.position.y, cam.position.z, cam.rotation.x, cam.rotation.y];
     const k = this.keys;
     let f = (k.has('w') || k.has('arrowup') ? 1 : 0) - (k.has('s') || k.has('arrowdown') ? 1 : 0);
     let r = (k.has('d') ? 1 : 0) - (k.has('a') ? 1 : 0);
@@ -172,8 +182,10 @@ export class Walk {
     // Em planta: frente = (-sin yaw, +cos yaw); direita = (cos yaw, sin yaw)
     const dx = (-Math.sin(p.yaw) * f + Math.cos(p.yaw) * r) * speed;
     const dz = (Math.cos(p.yaw) * f + Math.sin(p.yaw) * r) * speed;
-    if (dx && !this.blocked(p.x + dx, p.z, p.y)) p.x += dx;
-    if (dz && !this.blocked(p.x, p.z + dz, p.y)) p.z += dz;
+    // Se um ponto de partida cair encostado num objeto, deixa sair em vez de travar.
+    const stuck = (dx || dz) && this.blocked(p.x, p.z, p.y);
+    if (dx && (stuck || !this.blocked(p.x + dx, p.z, p.y))) p.x += dx;
+    if (dz && (stuck || !this.blocked(p.x, p.z + dz, p.y))) p.z += dz;
 
     const ground = this.floorAt(p.x, p.z, p.y);
     if (ground >= p.y - 0.5) {
@@ -184,6 +196,8 @@ export class Walk {
       p.y = Math.max(ground, p.y + p.vy * dt);
     }
     this.apply(dt);
+    const after = [cam.position.x, cam.position.y, cam.position.z, cam.rotation.x, cam.rotation.y];
+    return after.some((v, i) => Math.abs(v - before[i]) > 1e-5);
   }
 
   apply(dt = 0) {

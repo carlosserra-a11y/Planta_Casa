@@ -1,7 +1,7 @@
 // Ferramentas de modelagem: caixas, paredes com vãos, lajes com furos, prismas inclinados.
 // Coordenadas de entrada sempre em "planta" (x, z com z = profundidade); no mundo 3D z = -z.
-import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/+esm';
+import { mergeGeometries } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/BufferGeometryUtils.js/+esm';
 
 const V2 = (a, b) => new THREE.Vector2(a, b);
 
@@ -205,11 +205,13 @@ export class Builder {
     this.plan[level].items.push({ kind, x1: Math.min(x1, x2), x2: Math.max(x1, x2), z1: Math.min(z1, z2), z2: Math.max(z1, z2), ...extra });
   }
 
-  /** Luz pontual (acende à noite). */
-  point(L, x, y, z, color, intensity, distance) {
+  /** Luz pontual (acende à noite). key = continua acesa no modo leve (celular). */
+  point(L, x, y, z, color, intensity, distance, key = false) {
     const l = new THREE.PointLight(color, 0, distance, 2);
     l.position.set(x, y, -z);
+    l.visible = false;
     l.userData.nightIntensity = intensity;
+    l.userData.key = key;
     this.layer(L).add(l);
     this.lights.push(l);
     return l;

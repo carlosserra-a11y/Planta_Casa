@@ -1,6 +1,6 @@
 // Móveis, louças, vegetação, carro e pontos de luz. Peças montadas em coordenadas locais:
 // frente da peça = +z local. rot 0 = frente para a rua; PI = para o fundo; -PI/2 = para x menor.
-import * as THREE from 'three';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/+esm';
 import { Y } from './plan-data.js';
 
 let B;
@@ -251,7 +251,7 @@ function garage() {
     B.box(FG, 0.15, 0.27, 1.85, 2.15, z - 0.07, z + 0.07, M.black);
     B.box(FG, 0.27, 0.272, 1.9, 2.1, z - 0.05, z + 0.05, M.lamp, { cast: false });
   }
-  B.point(LI, 1.7, 2.6, 8.0, 0xffd7a0, 6, 9);
+  B.point(LI, 1.7, 2.6, 8.0, 0xffd7a0, 6, 9, true);
 }
 
 function hallAndLavabo() {
@@ -265,7 +265,7 @@ function hallAndLavabo() {
   plant(FG, 5.36, 8.75, 0.9);
   plant(FG, 5.4, 9.02, 0.7);
   globe(FG, 5.3, 5.7, Y.uc, 4.2, 0.2);
-  B.point(LI, 5.3, 4.1, 5.7, 0xffd7a0, 7, 10);
+  B.point(LI, 5.3, 4.1, 5.7, 0xffd7a0, 7, 10, true);
   B.point(LI, 4.05, 2.55, 4.6, 0xffd7a0, 3, 5);
   toilet(FG, 0, 5.36, 10.36, 0);
   vanity(FG, 0, 5.59, 9.65, -Math.PI / 2, 0.5);
@@ -290,7 +290,7 @@ function living() {
   lc(lamp, 0, 1.62, 0, 0.2, 0.25, M.lamp, 16, 0.14);
   plant(FG, 0.55, 11.4, 1.1);
   spots(FG, [[1.4, 12.0], [1.4, 14.5], [3.9, 12.0], [3.9, 14.5]], Y.gc);
-  B.point(LI, 2.8, 2.6, 13.3, 0xffd7a0, 6, 9);
+  B.point(LI, 2.8, 2.6, 13.3, 0xffd7a0, 6, 9, true);
 }
 
 function dining() {
@@ -343,7 +343,7 @@ function kitchen() {
   B.fp(0, 'fridge', 5.15, 5.85, 18.3, 19.2);
   B.fp(0, 'cabinet', 5.2, 5.85, 19.2, 20.6);
   spots(FG, [[1.0, 18.5], [4.2, 18.5], [4.2, 21.6], [1.0, 21.6]], Y.gc);
-  B.point(LI, 2.6, 2.5, 19.9, 0xffe2b8, 6, 8);
+  B.point(LI, 2.6, 2.5, 19.9, 0xffe2b8, 6, 8, true);
 }
 
 function gourmet() {
@@ -382,7 +382,7 @@ function gourmet() {
   pendant(FG, 2.15, 24.6, 2.76, 1.85, 0.16);
   B.box(FG, 3.93, 3.98, 1.2, 1.95, 22.8, 24.1, M.screen);
   plant(FG, 5.45, 25.55, 1.2);
-  B.point(LI, 2.2, 2.55, 24.0, 0xffcf8f, 7, 9);
+  B.point(LI, 2.2, 2.55, 24.0, 0xffcf8f, 7, 9, true);
   B.point(LI, 0.7, 1.2, 23.2, 0xff8a3a, 1.5, 3);
   // Lavanderia
   B.box(FG, 5.2, 5.85, 0, 0.85, 22.3, 22.95, M.white, { collide: true });
@@ -406,7 +406,7 @@ function outdoor() {
   for (const [x, z] of [[5.3, 4.5], [3.55, 4.65]]) B.cyl(FG, x, z, 0, 0.12, 0.05, M.lamp);
   B.point(LI, 5.3, 0.4, 4.4, 0xffd7a0, 3.5, 6);
   B.point(LI, 3.6, 1.65, -0.3, 0xffe4bd, 1.5, 3);
-  B.point(LI, 2.2, 1.2, 2.6, 0xffd9a8, 6, 9); // luz de destaque na fachada
+  B.point(LI, 2.2, 1.2, 2.6, 0xffd9a8, 6, 9, true); // luz de destaque na fachada
   lounger(FG, 4.25, 29.6, 0);
   lounger(FG, 5.2, 29.6, 0);
   const side = grp(FG, 4.72, 28.7);
@@ -416,7 +416,7 @@ function outdoor() {
   lc(shower, 0, 1.05, 0, 0.025, 2.1, M.steel, 8);
   lc(shower, 0, 2.1, 0.12, 0.08, 0.02, M.steel, 16);
   for (const x of [4.1, 4.55, 5.0, 5.45]) plant(FG, x, 31.62, 0.55, 0.3, M.pot);
-  B.point(LI, 1.95, -0.6, 29.2, 0x60e0ff, 8, 7);
+  B.point(LI, 1.95, -0.6, 29.2, 0x60e0ff, 8, 7, true);
   B.point(LI, 4.8, 0.6, 31.2, 0xc8ffb0, 2.5, 4);
   B.point(LI, 1.95, 1.4, 31.4, 0xfff0d0, 1.5, 3);
 }
@@ -435,7 +435,7 @@ function suite() {
   armchair(FU, 1, 3.75, 5.75, -Math.PI / 2, y);
   B.box(FU, 2.0, 3.6, y + 0.012, y + 0.024, 6.0, 8.4, M.rug, { cast: false });
   spots(FU, [[1.6, 6.0], [3.4, 6.0], [1.6, 8.5], [3.4, 8.5]], Y.uc);
-  B.point(LI, 2.4, 5.55, 7.2, 0xffd7a0, 5, 7);
+  B.point(LI, 2.4, 5.55, 7.2, 0xffd7a0, 5, 7, true);
   // Closet em U
   wardrobe(FU, 1, 0.15, 0.75, 9.32, 11.3, y, 'x+', M.oak);
   wardrobe(FU, 1, 0.75, 2.3, 9.32, 9.9, y, 'z+', M.oak);

@@ -84,6 +84,88 @@ export function drawPlan(svg, plan, level, horizontal) {
   drawScale(gText, horizontal);
 }
 
+/**
+ * Zoom e arraste da planta: roda do mouse, botões, arrastar com 1 dedo e pinça com 2.
+ * @returns {{ reset: () => void }} reset() lê o viewBox recém-desenhado como enquadramento base
+ */
+export function planZoom(svg, btn) {
+  let base = null;
+  let vb = null;
+  const set = (v) => {
+    vb = v;
+    svg.setAttribute('viewBox', v.join(' '));
+  };
+  const toSvg = (cx, cy) => {
+    const p = svg.createSVGPoint();
+    p.x = cx;
+    p.y = cy;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  };
+  const zoomAt = (k, cx, cy) => {
+    if (!vb) return;
+    const r = svg.getBoundingClientRect();
+    const p = toSvg(cx ?? r.left + r.width / 2, cy ?? r.top + r.height / 2);
+    const nw = Math.min(base[2], Math.max(2.5, vb[2] * k));
+    const s = nw / vb[2];
+    set([p.x - (p.x - vb[0]) * s, p.y - (p.y - vb[1]) * s, nw, vb[3] * s]);
+  };
+  svg.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoomAt(e.deltaY < 0 ? 0.85 : 1 / 0.85, e.clientX, e.clientY);
+  }, { passive: false });
+
+  const pointers = new Map();
+  let anchor = null;
+  let pinch = 0;
+  const two = () => [...pointers.values()];
+  svg.addEventListener('pointerdown', (e) => {
+    svg.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1) anchor = toSvg(e.clientX, e.clientY);
+    if (pointers.size === 2) {
+      const [a, b] = two();
+      pinch = Math.hypot(a.x - b.x, a.y - b.y);
+      anchor = null;
+    }
+  });
+  svg.addEventListener('pointermove', (e) => {
+    if (!pointers.has(e.pointerId) || !vb) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size >= 2 && pinch) {
+      const [a, b] = two();
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (d > 0) zoomAt(pinch / d, (a.x + b.x) / 2, (a.y + b.y) / 2);
+      pinch = d;
+      return;
+    }
+    if (anchor) {
+      const p = toSvg(e.clientX, e.clientY);
+      set([vb[0] - (p.x - anchor.x), vb[1] - (p.y - anchor.y), vb[2], vb[3]]);
+    }
+  });
+  const up = (e) => {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinch = 0;
+    if (pointers.size === 1) {
+      const [a] = two();
+      anchor = toSvg(a.x, a.y);
+    } else if (!pointers.size) {
+      anchor = null;
+    }
+  };
+  svg.addEventListener('pointerup', up);
+  svg.addEventListener('pointercancel', up);
+  btn.in.addEventListener('click', () => zoomAt(0.7));
+  btn.out.addEventListener('click', () => zoomAt(1 / 0.7));
+  btn.reset.addEventListener('click', () => base && set([...base]));
+  return {
+    reset() {
+      base = svg.getAttribute('viewBox').split(/[\s,]+/).map(Number);
+      set([...base]);
+    },
+  };
+}
+
 function drawItem(g, gText, it, R, P, pts, level) {
   const { x1, x2, z1, z2 } = it;
   switch (it.kind) {

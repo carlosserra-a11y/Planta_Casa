@@ -209,8 +209,30 @@
   #copyStatus { font-size: 12px; color: var(--muted); }
   #promptText { margin: 0; padding: 16px 18px 22px; white-space: pre-wrap; font: 13px/1.6 var(--font-body); max-width: 72ch; }
 
-  #loading { position: absolute; inset: 0; display: grid; place-items: center; background: var(--bg); font: 600 15px var(--font-body); color: var(--muted); transition: opacity 0.5s; }
+  #loading {
+    position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 24px;
+    background: var(--bg); color: var(--muted); text-align: center; transition: opacity 0.5s;
+  }
+  #loading .house { width: 56px; height: 56px; color: var(--accent); }
+  #loading .bar { width: 160px; height: 3px; border-radius: 3px; background: var(--line); overflow: hidden; }
+  #loading .bar i { display: block; width: 40%; height: 100%; background: var(--accent); animation: load 1.1s ease-in-out infinite; }
+  @keyframes load { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+  #loadMsg { margin: 0; font: 600 14px var(--font-body); max-width: 34ch; }
+  #loading.error .bar { display: none; }
+  #loading.error #loadMsg { color: var(--ink); }
   body.ready #loading { opacity: 0; pointer-events: none; }
+  #toast {
+    position: absolute; z-index: 4; left: 50%; top: calc(72px + env(safe-area-inset-top, 0px)); transform: translateX(-50%);
+    padding: 8px 14px; border-radius: 999px; background: var(--surface-solid); border: 1px solid var(--line); box-shadow: var(--shadow);
+    font-weight: 600; font-size: 13px; max-width: calc(100vw - 32px); text-align: center;
+  }
+  #toast[hidden] { display: none; }
+  .room-label { transition: opacity 0.15s; }
+  button, .chip, .room-btn, select, label { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  #walkHint .x { display: none; }
+  #walkHint[data-drag="true"] .d { display: none; }
+  #walkHint[data-drag="true"] .x { display: inline; }
+  body[data-tier="low"] .float { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--surface-solid); }
 
   @media (max-width: 760px) {
     .brand { padding: 9px 12px; max-width: calc(100vw - 132px); }
@@ -226,15 +248,27 @@
     #walkHud { gap: 6px 8px; top: calc(66px + env(safe-area-inset-top, 0px)); bottom: auto; }
     #walkHint { display: none; }
     #joy { bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+    .plan-head { padding-top: calc(62px + env(safe-area-inset-top, 0px)); gap: 8px; }
+    .plan-head p { display: none; }
+    .plan-head h2 { font-size: 17px; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
-<script type="importmap">
-{ "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-} }
-</script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/+esm" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js/+esm" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/renderers/CSS2DRenderer.js/+esm" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js/+esm" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/BufferGeometryUtils.js/+esm" crossorigin>
+<link rel="modulepreload" href="js/plan-data.js">
+<link rel="modulepreload" href="js/textures.js">
+<link rel="modulepreload" href="js/materials.js">
+<link rel="modulepreload" href="js/builder.js">
+<link rel="modulepreload" href="js/house.js">
+<link rel="modulepreload" href="js/furniture.js">
+<link rel="modulepreload" href="js/walk.js">
+<link rel="modulepreload" href="js/plan2d.js">
+<link rel="modulepreload" href="js/prompt.js">
 
 <div id="app">
   <div id="stage" aria-label="Modelo 3D da casa"></div>
@@ -320,6 +354,7 @@
       <span class="d d1">Clique na cena para olhar com o mouse · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> anda · <kbd>Shift</kbd> corre</span>
       <span class="d d2"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> anda · <kbd>Shift</kbd> corre · <kbd>Esc</kbd> solta o mouse</span>
       <span class="t">Arraste para olhar · use o círculo para andar</span>
+      <span class="x">Arraste para olhar · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> anda · <kbd>Shift</kbd> corre</span>
     </span>
     <button id="exitWalk" class="ghost" type="button">Sair</button>
   </div>
@@ -364,6 +399,21 @@
     <pre id="promptText"></pre>
   </dialog>
 
-  <div id="loading">Montando a casa…</div>
+  <div id="toast" role="status" hidden></div>
+  <div id="loading" role="status">
+    <svg class="house" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 22 24 9l16 13M12 19v20h24V19M21 39V28h6v11" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <p id="loadMsg">Montando a casa…</p>
+    <div class="bar"><i></i></div>
+  </div>
 </div>
+<script>
+  // Aviso se o 3D não terminar de carregar (internet lenta ou bloqueio do navegador).
+  setTimeout(function () {
+    if (!document.body.classList.contains('ready')) {
+      var m = document.getElementById('loadMsg');
+      var box = document.getElementById('loading');
+      if (m && box && !box.classList.contains('error')) m.textContent = 'Está demorando mais que o normal. Confira a internet; se não abrir, recarregue a página.';
+    }
+  }, 20000);
+</script>
 <script type="module" src="js/main.js"></script>
